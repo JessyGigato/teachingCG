@@ -10,8 +10,8 @@ namespace Renderer
         static void Main(string[] args)
         {
             Raster render = new Raster(1024, 512);
-            FreeTransformTest(render);
-            //DrawRoomTest(render);
+            //FreeTransformTest(render);
+            DrawRoomTest(render);
             render.RenderTarget.Save("test.rbm");
             Console.WriteLine("Done.");
         }
