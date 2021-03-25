@@ -49,7 +49,7 @@ namespace Renderer {
         private static void FreeTransformTest (Raster render) {
             render.ClearRT (float4 (0, 0, 0.2f, 1)); // clear with color dark blue.
 
-            int N = 100000;
+            int N = 100;
             // Create buffer with points to render
             float3[] points = RandomPositionsInBoxSurface (N);
 
@@ -78,7 +78,7 @@ namespace Renderer {
             // raster.ClearRT (float4 (0, 0, 0.2f, 1)); // clear with color dark blue.
             raster.ClearRT (float4 (.250f, .092f, .035f, 1)); // clear with orange-brown.
 
-            int N = 50000;
+            int N = 5000;
             // Create buffer with points to render
             float3[] points = RandomPositionsInBoxSurface (N);
 
@@ -94,7 +94,7 @@ namespace Renderer {
 
         private static void DrawRoom (Raster raster, float3[] boxPoints, float4x4 transform) {
             DrawBookCases (raster, boxPoints, mul (Transforms.Scale (1f, .3f, 1f), mul (Transforms.RotateZGrad (-15), mul (Transforms.Translate (0, 1, -1), transform))));
-            DrawLupa (raster, boxPoints, mul (Transforms.Scale (.3f, .3f, .3f), mul (Transforms.RotateZ (15), mul (Transforms.RotateX (0), mul (Transforms.Translate (1f, -1.3f, -1f), transform)))));
+            DrawMaximizingGlass (raster, boxPoints, mul (Transforms.Scale (.3f, .3f, .3f), mul (Transforms.RotateZ (15), mul (Transforms.RotateX (0), mul (Transforms.Translate (1f, -1.3f, -1f), transform)))));
         }
 
         private static void DrawBookCases (Raster raster, float3[] boxPoints, float4x4 transform) {
@@ -115,25 +115,25 @@ namespace Renderer {
         }
 
         private static void DrawBook (Raster raster, float3[] boxPoints, float4x4 transform, float4 bc_color, float4 fb_color, float4 sh_color) {
-            DrawBookBase (raster, boxPoints, mul (Transforms.Translate (0, -.3f, -.05f), transform), bc_color);
-            DrawFacebook (raster, boxPoints, mul (Transforms.Translate (0, -.34f, 0), transform), fb_color);
-            DrawSheets (raster, boxPoints, mul (Transforms.Translate (0, -.26f, 0), transform), sh_color);
-            DrawFacebook (raster, boxPoints, mul (Transforms.Translate (0, .4f, 0), transform), fb_color);
+            DrawSpine (raster, boxPoints, mul (Transforms.Translate (0, -.3f, -.05f), transform), bc_color);
+            DrawCover (raster, boxPoints, mul (Transforms.Translate (0, -.34f, 0), transform), fb_color);
+            DrawPages (raster, boxPoints, mul (Transforms.Translate (0, -.26f, 0), transform), sh_color);
+            DrawCover (raster, boxPoints, mul (Transforms.Translate (0, .4f, 0), transform), fb_color);
         }
-        private static void DrawBookBase (Raster raster, float3[] boxPoints, float4x4 transform, float4 color) {
+        private static void DrawSpine (Raster raster, float3[] boxPoints, float4x4 transform, float4 color) {
             float4x4 transformingIntoBookBase = mul (Transforms.Scale (2.2f, 0.7f, 0.05f), transform);
             DrawBox (raster, boxPoints, transformingIntoBookBase, color);
         }
-        private static void DrawFacebook (Raster raster, float3[] boxPoints, float4x4 transform, float4 color) {
+        private static void DrawCover (Raster raster, float3[] boxPoints, float4x4 transform, float4 color) {
             float4x4 transformingIntoFacebook = mul (Transforms.Scale (2.2f, 0.1f, 1.53f), transform);
             DrawBox (raster, boxPoints, transformingIntoFacebook, color);
         }
-        private static void DrawSheets (Raster raster, float3[] boxPoints, float4x4 transform, float4 color) {
+        private static void DrawPages (Raster raster, float3[] boxPoints, float4x4 transform, float4 color) {
             float4x4 transformingIntoSheets = mul (Transforms.Scale (2.2f, 0.56f, 1.5f), transform);
             DrawBox (raster, boxPoints, transformingIntoSheets, color);
         }
 
-        private static void DrawLupa (Raster raster, float3[] boxPoints, float4x4 transform) {
+        private static void DrawMaximizingGlass (Raster raster, float3[] boxPoints, float4x4 transform) {
             float4x4 transformingIntoGlass = mul (Transforms.Scale (1f, 1f, .2f), mul (Transforms.Translate (2f, -.4f, 0), mul (Transforms.RotateY (20.4f), transform)));
             float4x4 transformingIntoSostainer = mul (Transforms.Translate (0, 0, 2), mul (Transforms.Scale (.1f, .2f, 1f), transform));
 
