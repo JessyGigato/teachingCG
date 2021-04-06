@@ -2,8 +2,8 @@
 
 ## Integrantes:
 
-Yasmin Cisneros Cimadevila  C411 
+Yasmin Cisneros Cimadevila  C411  
+github: ycimadevila
 
-Jessy Gigato Izquierdo      C411 
-
-
+Jessy Gigato Izquierdo      C411  
+github: JessyGigato
