@@ -63,19 +63,12 @@ namespace Renderer {
             //    return float3 (cos (alpha) * cos (beta) / 10, sin (beta), sin (alpha) * cos (beta));
             //});
 
-            // Parametric representation of a cube.
-            return Manifold<MyVertex>.Surface (30, 30, (u, v) => {
-                float alpha = u * 2 * pi;
-                float beta = pi / 2 - v * pi;
-                return float3 (0, v, u);
-            });
-
             // Generative model
-            // return Manifold<MyVertex>.Generative (30, 30,
+            // return Manifold<MyVertex>.Generative (10, 10,
             //     // g function
-            //     u => float3 (cos (2 * pi * u), 0, sin (2 * pi * u)),
+            //     u => float3 (cos (2 * pi * u) / 6, 0, sin (2 * pi * u) / 6),
             //     // f function
-            //     (p, v) => p + float3 (0, v / 4, 0)
+            //     (p, v) => p + float3 (0, v * 3 / 2, 0)
             // );
 
             // return Manifold<MyVertex>.Lofted (10, 10,
@@ -83,7 +76,13 @@ namespace Renderer {
             //     v => float3 (v, v, 0),
             //     // f function
             //     v => float3 (v, 0, v)
-            // );
+            // ); 
+
+            // like an spider web
+            return Manifold<MyVertex>.Generative (10, 10,
+                v => mul (float4 (-cos (2 * pi * v), -1, sin (2 * pi * v), 1), Transforms.Rotate (pi / 4, float3 (0, v, 0))).xyz,
+                (v, u) => v + float3 (0, u, 0)
+            );
 
             // Revolution Sample with Bezier
             // float3[] contourn = {
@@ -116,60 +115,72 @@ namespace Renderer {
                 float3 (0f, 1.1f, 0)
             };
 
-            return Manifold<MyVertex>.Revolution (35, 35, t => EvalBezier (contourn, t), float3 (0, 1, 0));
+            return Manifold<MyVertex>.Revolution (15, 15, t => EvalBezier (contourn, t), float3 (0, 1, 0));
         }
 
-        static List<Mesh<MyVertex>> CreateCube () {
+        static List<Mesh<MyVertex>> CreateBook (int slices, int stacks, float3 p, int deg) {
             return new List<Mesh<MyVertex>> () {
-                Manifold<MyVertex>.Surface (20, 20, (u, v) => {
-                        return float3 (0, v / 5, u);
+                Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
+                        return mul (p + float3 (0, v / 5, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
                     }).ConvertTo (Topology.Lines),
-                    Manifold<MyVertex>.Surface (20, 20, (u, v) => {
-                        return float3 (1, v / 5, u);
+                    Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
+                        return mul (p + float3 (1, v / 5, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
                     }).ConvertTo (Topology.Lines),
-                    Manifold<MyVertex>.Surface (20, 20, (u, v) => {
-                        return float3 (v, u / 5, 0);
+                    Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
+                        return mul (p + float3 (v, u / 5, 0 * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
                     }).ConvertTo (Topology.Lines),
-                    Manifold<MyVertex>.Surface (20, 20, (u, v) => {
-                        return float3 (v, u / 5, 1);
+                    Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
+                        return mul (p + float3 (v, u / 5, 1 * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
                     }).ConvertTo (Topology.Lines),
-                    Manifold<MyVertex>.Surface (20, 20, (u, v) => {
-                        return float3 (v, 0, u);
+                    Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
+                        return mul (p + float3 (v, 0, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
                     }).ConvertTo (Topology.Lines),
-                    Manifold<MyVertex>.Surface (20, 20, (u, v) => {
-                        return float3 (v, .2f, u);
+                    Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
+                        return mul (p + float3 (v, .2f, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
                     }).ConvertTo (Topology.Lines)
             };
         }
 
+        static float3x3 transform3x3to4x4 (float4x4 f) {
+            return float3x3 (f._m00, f._m01, f._m02, f._m10, f._m11, f._m12, f._m20, f._m21, f._m22);
+        }
+
         static List<Mesh<MyVertex>> CreateMagnifyingGlass () {
             return new List<Mesh<MyVertex>> () {
+                //glass
                 Manifold<MyVertex>.Surface (10, 10, (u, v) => {
                         float alpha = u * 2 * pi;
                         float beta = pi / 2 - v * pi;
-                        return float3 (cos (alpha) * cos (beta) / 9, sin (beta), sin (alpha) * cos (beta));
+                        return mul (float3 (cos (alpha) * cos (beta) / 3, sin (beta) / 3 - 1, sin (alpha) * cos (beta) / 10), transform3x3to4x4 (Transforms.RotateYGrad (30)));
                     }).ConvertTo (Topology.Lines),
-                    Manifold<MyVertex>.Generative (30, 10,
-                        // g function
-                        u => float3 (0, cos (2 * pi * u), sin (2 * pi * u)),
-                        // f function
-                        (p, v) => p + float3 (v / 8, 0, 0)
+
+                    //aro
+                    Manifold<MyVertex>.Generative (30, 5,
+                        u => mul (float3 (-.1f, cos (2 * pi * u) / 3 - 1, sin (2 * pi * u) / 3), transform3x3to4x4 (Transforms.RotateYGrad (60))),
+                        (p, v) => mul (p + float3 (v / 20, v / 12, 0), transform3x3to4x4 (Transforms.RotateYGrad (60)))
                     ).ConvertTo (Topology.Lines),
-                    Manifold<MyVertex>.Generative (30, 30,
+
+                    Manifold<MyVertex>.Lofted (10, 10,
                         // g function
-                        u => float3 (cos (2 * pi * u) / 6, -1.5f, sin (2 * pi * u) / 6),
+                        u => mul (float3 (cos (2 * pi * u) / 15, sin (2 * pi * u) / 15 - 1, .3f), transform3x3to4x4 (Transforms.RotateYGrad (-45))),
                         // f function
-                        (p, v) => p + float3 (v * 3 / 2, 0, 0)
+                        u => mul (float3 (cos (2 * pi * u) / 15, sin (2 * pi * u) / 15 - 1, 1.2f), transform3x3to4x4 (Transforms.RotateYGrad (-25)))
                     ).ConvertTo (Topology.Lines)
             };
         }
 
         private static void GeneratingMeshes (Raster<MyVertex, MyProjectedVertex> render) {
-            render.ClearRT (float4 (0, 0, 0.2f, 1)); // clear with color dark blue.
+            render.ClearRT (float4 (0, 0, 0.1f, 1)); // clear with color dark blue.
 
             // var primitive = CreateModel ();
             // var apple = CreateApple ();
-            // var cube = CreateCube ();
+            var cube0 = CreateBook (5, 5, float3 (-.3f, -.5f, .2f), 17);
+            var cube1 = CreateBook (5, 5, float3 (-.7f, -.3f, .25f), 50);
+            var cube2 = CreateBook (5, 5, float3 (-.9f, -.1f, -.2f), 100);
+            var cube3 = CreateBook (5, 5, float3 (-.3f, .1f, .2f), 17);
+            var cube4 = CreateBook (5, 5, float3 (-.9f, .3f, -.2f), 100);
+            var cube5 = CreateBook (5, 5, float3 (-.7f, .5f, .25f), 50);
+            var cube6 = CreateBook (5, 5, float3 (-.1f, .7f, .2f), 17);
             var magn_glass = CreateMagnifyingGlass ();
 
             /// Convert to a wireframe to render. Right now only lines can be rasterized.
@@ -190,20 +201,51 @@ namespace Renderer {
             };
 
             // Define a pixel shader that colors using a constant value
-            render.PixelShader = p => {
-                return float4 (p.Homogeneous.x / 1024.0f, p.Homogeneous.y / 512.0f, 1, 1);
-                // return float4 (p.Homogeneous.x / 1024.0f, p.Homogeneous.y / 512.0f, p.Homogeneous.z / 128.0f, 1);
-                // return float4 (.6f, 0, 0, 1);
-            };
+            // render.PixelShader = p => { return float4 (p.Homogeneous.x / 1024.0f, p.Homogeneous.y / 512.0f, 1, 1); };
 
             #endregion
 
             // Draw the mesh.
             // render.DrawMesh (primitive);
             // render.DrawMesh (apple);
-            // for (int i = 0; i < cube.Count; i++) {
-            //     render.DrawMesh (cube[i]);
-            // }
+
+            // Drawing
+            render.PixelShader = p => { return float4 (1, 0, 0, 1); };
+            for (int i = 0; i < cube0.Count; i++) {
+                render.DrawMesh (cube0[i]);
+            }
+
+            render.PixelShader = p => { return float4 (1, 0, .5f, 1); };
+            for (int i = 0; i < cube1.Count; i++) {
+                render.DrawMesh (cube1[i]);
+            }
+
+            render.PixelShader = p => { return float4 (0, 1, 0, 1); };
+            for (int i = 0; i < cube2.Count; i++) {
+                render.DrawMesh (cube2[i]);
+            }
+
+            render.PixelShader = p => { return float4 (.3f, 0, 1, 1); };
+            for (int i = 0; i < cube3.Count; i++) {
+                render.DrawMesh (cube3[i]);
+            }
+
+            render.PixelShader = p => { return float4 (.4f, .5f, 1, 1); };
+            for (int i = 0; i < cube4.Count; i++) {
+                render.DrawMesh (cube4[i]);
+            }
+
+            render.PixelShader = p => { return float4 (1, 0, .5f, 1); };
+            for (int i = 0; i < cube5.Count; i++) {
+                render.DrawMesh (cube5[i]);
+            }
+
+            render.PixelShader = p => { return float4 (.1f, 1, .1f, 1); };
+            for (int i = 0; i < cube6.Count; i++) {
+                render.DrawMesh (cube6[i]);
+            }
+
+            render.PixelShader = p => { return float4 (1, 1, 1, 1); };
             for (int i = 0; i < magn_glass.Count; i++) {
                 render.DrawMesh (magn_glass[i]);
             }
