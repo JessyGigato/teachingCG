@@ -215,7 +215,7 @@ namespace Renderer {
                 render.DrawMesh (cube0[i]);
             }
 
-            render.PixelShader = p => { return float4 (1, 0, .5f, 1); };
+            render.PixelShader = p => { return float4 (.131f, .4f, .3f, 1); };
             for (int i = 0; i < cube1.Count; i++) {
                 render.DrawMesh (cube1[i]);
             }
@@ -240,7 +240,7 @@ namespace Renderer {
                 render.DrawMesh (cube5[i]);
             }
 
-            render.PixelShader = p => { return float4 (.1f, 1, .1f, 1); };
+            render.PixelShader = p => { return float4 (.18f, .86f, .84f, 1); };
             for (int i = 0; i < cube6.Count; i++) {
                 render.DrawMesh (cube6[i]);
             }
