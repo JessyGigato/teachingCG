@@ -3,46 +3,150 @@ using GMath;
 using Rendering;
 using static GMath.Gfx;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Renderer {
     class Program {
-        struct MyVertex : IVertex<MyVertex> {
+
+        static void CreateScene (Scene<float3> scene) {
+            // Adding elements of the scene
+            scene.Add (Raycasting.UnitarySphere, Transforms.Translate (0, 1, 0));
+            scene.Add (Raycasting.PlaneXZ, Transforms.Identity);
+        }
+
+        struct PositionNormal : INormalVertex<PositionNormal> {
             public float3 Position { get; set; }
+            public float3 Normal { get; set; }
 
-            public MyVertex Add (MyVertex other) {
-                return new MyVertex {
+            public PositionNormal Add (PositionNormal other) {
+                return new PositionNormal {
                     Position = this.Position + other.Position,
+                        Normal = this.Normal + other.Normal
                 };
             }
 
-            public MyVertex Mul (float s) {
-                return new MyVertex {
+            public PositionNormal Mul (float s) {
+                return new PositionNormal {
                     Position = this.Position * s,
+                        Normal = this.Normal * s
+                };
+            }
+
+            public PositionNormal Transform (float4x4 matrix) {
+                float4 p = float4 (Position, 1);
+                p = mul (p, matrix);
+
+                float4 n = float4 (Normal, 0);
+                n = mul (n, matrix);
+
+                return new PositionNormal {
+                    Position = p.xyz / p.w,
+                        Normal = n.xyz
                 };
             }
         }
 
-        struct MyProjectedVertex : IProjectedVertex<MyProjectedVertex> {
-            public float4 Homogeneous { get; set; }
-
-            public MyProjectedVertex Add (MyProjectedVertex other) {
-                return new MyProjectedVertex {
-                    Homogeneous = this.Homogeneous + other.Homogeneous
-                };
-            }
-
-            public MyProjectedVertex Mul (float s) {
-                return new MyProjectedVertex {
-                    Homogeneous = this.Homogeneous * s
-                };
-            }
+        static void CreateScene (Scene<PositionNormal> scene) {
+            // Adding elements of the scene
+            scene.Add (Raycasting.UnitarySphere.AttributesMap (a => new PositionNormal { Position = a, Normal = normalize (a) }),
+                Transforms.Translate (0, 1, 0));
+            scene.Add (Raycasting.PlaneXZ.AttributesMap (a => new PositionNormal { Position = a, Normal = float3 (0, 1, 0) }),
+                Transforms.Identity);
         }
 
-        static void Main (string[] args) {
-            Raster<MyVertex, MyProjectedVertex> render = new Raster<MyVertex, MyProjectedVertex> (1024, 512);
-            GeneratingMeshes (render);
-            render.RenderTarget.Save ("test.rbm");
-            Console.WriteLine ("Done.");
+        /// <summary>
+        /// Payload used to pick a color from a hit intersection
+        /// </summary>
+        struct MyRayPayload {
+            public float3 Color;
+        }
+
+        /// <summary>
+        /// Payload used to flag when a ray was shadowed.
+        /// </summary>
+        struct ShadowRayPayload {
+            public bool Shadowed;
+        }
+
+        static void SimpleRaycast (Texture2D texture) {
+            Raytracer<MyRayPayload, float3> raycaster = new Raytracer<MyRayPayload, float3> ();
+
+            // View and projection matrices
+            float4x4 viewMatrix = Transforms.LookAtLH (float3 (2, 1f, 4), float3 (0, 0, 0), float3 (0, 1, 0));
+            float4x4 projectionMatrix = Transforms.PerspectiveFovLH (pi_over_4, texture.Height / (float) texture.Width, 0.01f, 20);
+
+            Scene<float3> scene = new Scene<float3> ();
+            CreateScene (scene);
+
+            raycaster.OnClosestHit += delegate (IRaycastContext context, float3 attribute, ref MyRayPayload payload) {
+                payload.Color = attribute;
+            };
+
+            for (float px = 0.5f; px < texture.Width; px++)
+                for (float py = 0.5f; py < texture.Height; py++) {
+                    RayDescription ray = RayDescription.FromScreen (px, py, texture.Width, texture.Height, inverse (viewMatrix), inverse (projectionMatrix), 0, 1000);
+
+                    MyRayPayload coloring = new MyRayPayload ();
+
+                    raycaster.Trace (scene, ray, ref coloring);
+
+                    texture.Write ((int) px, (int) py, float4 (coloring.Color, 1));
+                }
+        }
+
+        static void LitRaycast (Texture2D texture) {
+            // Scene Setup
+            float3 CameraPosition = float3 (1, 3.5f, 2);
+            float3 LightPosition = float3 (3, 5f, 4);
+            // View and projection matrices
+            float4x4 viewMatrix = Transforms.LookAtLH (CameraPosition, float3 (0, 1, 0), float3 (0, 1, 0));
+            float4x4 projectionMatrix = Transforms.PerspectiveFovLH (pi_over_4, texture.Height / (float) texture.Width, 0.01f, 20);
+
+            Scene<PositionNormal> scene = new Scene<PositionNormal> ();
+            CreateScene (scene);
+
+            // Raycaster to trace rays and check for shadow rays.
+            Raytracer<ShadowRayPayload, PositionNormal> shadower = new Raytracer<ShadowRayPayload, PositionNormal> ();
+            shadower.OnAnyHit += delegate (IRaycastContext context, PositionNormal attribute, ref ShadowRayPayload payload) {
+                // If any object is found in ray-path to the light, the ray is shadowed.
+                payload.Shadowed = true;
+                // No neccessary to continue checking other objects
+                return HitResult.Stop;
+            };
+
+            // Raycaster to trace rays and lit closest surfaces
+            Raytracer<MyRayPayload, PositionNormal> raycaster = new Raytracer<MyRayPayload, PositionNormal> ();
+            raycaster.OnClosestHit += delegate (IRaycastContext context, PositionNormal attribute, ref MyRayPayload payload) {
+                // Move geometry attribute to world space
+                attribute = attribute.Transform (context.FromGeometryToWorld);
+
+                float3 V = normalize (CameraPosition - attribute.Position);
+                float3 L = normalize (LightPosition - attribute.Position);
+                float lambertFactor = max (0, dot (attribute.Normal, L));
+
+                // Check ray to light...
+                ShadowRayPayload shadow = new ShadowRayPayload ();
+                shadower.Trace (scene,
+                    RayDescription.FromTo (attribute.Position + attribute.Normal * 0.001f, // Move an epsilon away from the surface to avoid self-shadowing 
+                        LightPosition), ref shadow);
+
+                payload.Color = shadow.Shadowed ? float3 (0, 0, 0) : float3 (1, 1, 1) * lambertFactor;
+            };
+            raycaster.OnMiss += delegate (IRaycastContext context, ref MyRayPayload payload) {
+                payload.Color = float3 (0, 0, 1); // Blue, as the sky.
+            };
+
+            /// Render all points of the screen
+            for (int px = 0; px < texture.Width; px++)
+                for (int py = 0; py < texture.Height; py++) {
+                    RayDescription ray = RayDescription.FromScreen (px + 0.5f, py + 0.5f, texture.Width, texture.Height, inverse (viewMatrix), inverse (projectionMatrix), 0, 1000);
+
+                    MyRayPayload coloring = new MyRayPayload ();
+
+                    raycaster.Trace (scene, ray, ref coloring);
+
+                    texture.Write (px, py, float4 (coloring.Color, 1));
+                }
         }
 
         static float3 EvalBezier (float3[] control, float t) {
@@ -55,200 +159,218 @@ namespace Renderer {
             return EvalBezier (nestedPoints, t);
         }
 
-        static Mesh<MyVertex> CreateModel () {
-            // Parametric representation of a sphere.
-            //return Manifold<MyVertex>.Surface (10, 10, (u, v) => {
-            //    float alpha = u * 2 * pi;
-            //    float beta = pi / 2 - v * pi;
-            //    return float3 (cos (alpha) * cos (beta) / 10, sin (beta), sin (alpha) * cos (beta));
-            //});
-
-            // Generative model
-            // return Manifold<MyVertex>.Generative (10, 10,
-            //     // g function
-            //     u => float3 (cos (2 * pi * u) / 6, 0, sin (2 * pi * u) / 6),
-            //     // f function
-            //     (p, v) => p + float3 (0, v * 3 / 2, 0)
-            // );
-
-            // return Manifold<MyVertex>.Lofted (10, 10,
-            //     // g function
-            //     v => float3 (v, v, 0),
-            //     // f function
-            //     v => float3 (v, 0, v)
-            // ); 
-
-            // like an spider web
-            return Manifold<MyVertex>.Generative (10, 10,
-                v => mul (float4 (-cos (2 * pi * v), -1, sin (2 * pi * v), 1), Transforms.Rotate (pi / 4, float3 (0, v, 0))).xyz,
-                (v, u) => v + float3 (0, u, 0)
-            );
-
-            // Revolution Sample with Bezier
-            // float3[] contourn = {
-            // float3 (0, -.5f, 0),
-            // float3 (0.8f, -0.5f, 0),
-            // float3 (1f, -0.2f, 0),
-            // float3 (0.6f, 1, 0),
-            // float3 (0, 1, 0)
-            // };
-
-            // Revolution Sample with Bezier (Apple)
-            // float3[] contourn = {
-            //     float3 (0, -.3f, 0),
-            //     float3 (1.2f, -0.8f, 0),
-            //     float3 (.7f, -0.5f, 0),
-            //     float3 (2f, 2.7f, 1),
-            //     float3 (0f, .9f, 0)
-            // };
-            // return Manifold<MyVertex>.Revolution (30, 30, t => EvalBezier (contourn, t), float3 (0, 1, 0));
-        }
-
-        static Mesh<MyVertex> CreateApple () {
-
-            // Revolution Sample with Bezier (Apple)
-            float3[] contourn = {
-                float3 (0, -.3f, 0),
-                float3 (1.2f, -0.8f, 0),
-                float3 (.7f, -0.5f, 0),
-                float3 (2f, 2.7f, 1),
-                float3 (0f, 1.1f, 0)
-            };
-
-            return Manifold<MyVertex>.Revolution (15, 15, t => EvalBezier (contourn, t), float3 (0, 1, 0));
-        }
-
-        static List<Mesh<MyVertex>> CreateBook (int slices, int stacks, float3 p, int deg) {
-            return new List<Mesh<MyVertex>> () {
-                Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
-                    return mul (p + float3 (0, v / 5, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
-                }).ConvertTo (Topology.Lines),
-                Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
-                    return mul (p + float3 (1, v / 5, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
-                }).ConvertTo (Topology.Lines),
-                Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
-                    return mul (p + float3 (v, u / 5, 0 * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
-                }).ConvertTo (Topology.Lines),
-                Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
-                    return mul (p + float3 (v, u / 5, 1 * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
-                }).ConvertTo (Topology.Lines),
-                Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
-                    return mul (p + float3 (v, 0, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
-                }).ConvertTo (Topology.Lines),
-                Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
-                    return mul (p + float3 (v, .2f, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
-                }).ConvertTo (Topology.Lines)
-            };
-        }
-
-        static float3x3 transform3x3to4x4 (float4x4 f) {
+        static float3x3 transform4x4to3x3 (float4x4 f) {
             return float3x3 (f._m00, f._m01, f._m02, f._m10, f._m11, f._m12, f._m20, f._m21, f._m22);
         }
 
-        static List<Mesh<MyVertex>> CreateMagnifyingGlass () {
-            return new List<Mesh<MyVertex>> () {
-                //glass
-                Manifold<MyVertex>.Surface (10, 10, (u, v) => {
-                        float alpha = u * 2 * pi;
-                        float beta = pi / 2 - v * pi;
-                        return mul (float3 (cos (alpha) * cos (beta) / 3, sin (beta) / 3 - 1, sin (alpha) * cos (beta) / 10), transform3x3to4x4 (Transforms.RotateYGrad (30)));
-                    }).ConvertTo (Topology.Lines),
-
-                    //aro
-                    Manifold<MyVertex>.Generative (30, 5,
-                        u => mul (float3 (-.1f, cos (2 * pi * u) / 3 - 1, sin (2 * pi * u) / 3), transform3x3to4x4 (Transforms.RotateYGrad (60))),
-                        (p, v) => mul (p + float3 (v / 20, v / 12, 0), transform3x3to4x4 (Transforms.RotateYGrad (60)))
-                    ).ConvertTo (Topology.Lines),
-
-                    Manifold<MyVertex>.Lofted (10, 10,
-                        // g function
-                        u => mul (float3 (cos (2 * pi * u) / 15, sin (2 * pi * u) / 15 - 1, .3f), transform3x3to4x4 (Transforms.RotateYGrad (-45))),
-                        // f function
-                        u => mul (float3 (cos (2 * pi * u) / 15, sin (2 * pi * u) / 15 - 1, 1.2f), transform3x3to4x4 (Transforms.RotateYGrad (-25)))
-                    ).ConvertTo (Topology.Lines)
-            };
+        static Mesh<PositionNormal> CreateGround (){
+            var model = Manifold<PositionNormal>.Surface (2, 1, (u, v) => {
+                return float3 (v, 0, u);}).Weld ();
+            model.ComputeNormals ();
+            return model;
         }
 
-        private static void GeneratingMeshes (Raster<MyVertex, MyProjectedVertex> render) {
-            render.ClearRT (float4 (0, 0, 0.1f, 1)); // clear with color dark blue.
+        static List<Mesh<PositionNormal>> CreateBook (int slices, int stacks, float3 p, int deg) {
+            var model1 = Manifold<PositionNormal>.Surface (slices, stacks, (u, v) => {
+                return mul (p + float3 (0, v / 5, u * 5 / 4), transform4x4to3x3 (Transforms.RotateYGrad (deg)));
+            }).Weld ();
+            model1.ComputeNormals ();
 
-            // var primitive = CreateModel ();
-            // var apple = CreateApple ();
-            var cube0 = CreateBook (5, 5, float3 (-.3f, -.5f, .2f), 17);
-            var cube1 = CreateBook (5, 5, float3 (-.7f, -.3f, .25f), 50);
-            var cube2 = CreateBook (5, 5, float3 (-.9f, -.1f, -.2f), 100);
-            var cube3 = CreateBook (5, 5, float3 (-.3f, .1f, .2f), 17);
-            var cube4 = CreateBook (5, 5, float3 (-.9f, .3f, -.2f), 100);
-            var cube5 = CreateBook (5, 5, float3 (-.7f, .5f, .25f), 50);
-            var cube6 = CreateBook (5, 5, float3 (-.1f, .7f, .2f), 17);
-            var magn_glass = CreateMagnifyingGlass ();
+            var model2 = Manifold<PositionNormal>.Surface (slices, stacks, (u, v) => {
+                return mul (p + float3 (1, v / 5, u * 5 / 4), transform4x4to3x3 (Transforms.RotateYGrad (deg)));
+            }).Weld ();
+            model2.ComputeNormals ();
 
-            /// Convert to a wireframe to render. Right now only lines can be rasterized.
-            // primitive = primitive.ConvertTo (Topology.Lines);
-            // apple = apple.ConvertTo (Topology.Lines);
+            var model3 = Manifold<PositionNormal>.Surface (slices, stacks, (u, v) => {
+                return mul (p + float3 (v, u / 5, 0 * 5 / 4), transform4x4to3x3 (Transforms.RotateYGrad (deg)));
+            }).Weld ();
+            model3.ComputeNormals ();
 
-            #region viewing and projecting
+            var model4 = Manifold<PositionNormal>.Surface (slices, stacks, (u, v) => {
+                return mul (p + float3 (v, u / 5, 1.25f), transform4x4to3x3 (Transforms.RotateYGrad (deg)));
+            }).Weld ();
+            model4.ComputeNormals ();
 
-            float4x4 viewMatrix = Transforms.LookAtLH (float3 (2, 1f, 4), float3 (0, 0, 0), float3 (0, 1, 0));
-            float4x4 projectionMatrix = Transforms.PerspectiveFovLH (pi_over_4, render.RenderTarget.Height / (float) render.RenderTarget.Width, 0.01f, 20);
+            var model5 = Manifold<PositionNormal>.Surface (slices, stacks, (u, v) => {
+                return mul (p + float3 (v, 0, u * 5 / 4), transform4x4to3x3 (Transforms.RotateYGrad (deg)));
+            }).Weld ();
+            model5.ComputeNormals ();
 
-            // Define a vertex shader that projects a vertex into the NDC.
-            render.VertexShader = v => {
-                float4 hPosition = float4 (v.Position, 1);
-                hPosition = mul (hPosition, viewMatrix);
-                hPosition = mul (hPosition, projectionMatrix);
-                return new MyProjectedVertex { Homogeneous = hPosition };
+            var model6 = Manifold<PositionNormal>.Surface (slices, stacks, (u, v) => {
+                return mul (p + float3 (v, .2f, u), transform4x4to3x3 (Transforms.RotateYGrad (deg)));
+            }).Weld ();
+            model6.ComputeNormals ();
+
+            return new List<Mesh<PositionNormal>> () { model1, model2, model3, model4, model5, model6 };
+        }
+
+        static List<Mesh<PositionNormal>> CreateMagnifyingGlass (float y) {
+            //glass
+            var model1 = Manifold<PositionNormal>.Surface (10, 10, (u, v) => {
+                float alpha = u * 2 * pi;
+                float beta = pi / 2 - v * pi;
+                return mul (float3 (sin (beta) / 4 + -0.1f,cos (alpha) * cos (beta) / 4  - .2f + y, sin (alpha) * cos (beta) / 10 + 1.7f), transform4x4to3x3 (Transforms.RotateYGrad (22)));
+            }).Weld ();
+            model1.ComputeNormals ();
+
+            //aro
+            var model2 = Manifold<PositionNormal>.Lofted (30, 1,
+                // g function
+                u => mul (float3 (cos (2 * pi * u) / 4, sin (2 * pi * u) / 4 - .2f + y, 1.65f), transform4x4to3x3 (Transforms.RotateYGrad (20))),
+                // f function
+                u => mul (float3 (cos (2 * pi * u) / 4 - .03f, sin (2 * pi * u) / 4 - .2f + y, 1.75f), transform4x4to3x3 (Transforms.RotateYGrad (20)))
+            ).Weld ();
+            model2.ComputeNormals ();
+
+            var model3 = Manifold<PositionNormal>.Lofted (10, 1,
+                // g function
+                u => mul (float3 (cos (2 * pi * u) / 18 + .5f, sin (2 * pi * u) / 18 - .35f + y, 2f), transform4x4to3x3 (Transforms.RotateYGrad (-25))),
+                u => mul (float3 (cos (2 * pi * u) / 18 + 1.5f, sin (2 * pi * u) / 18 - .2f + y, 1f), transform4x4to3x3 (Transforms.RotateYGrad (-45)))
+                // f function
+            ).Weld ();
+            model3.ComputeNormals ();
+
+            return new List<Mesh<PositionNormal>> () { model1, model2, model3 };
+        }
+
+        static Mesh<PositionNormal> CreateModel () {
+            // Revolution Sample with Bezier
+            float3[] contourn = {
+                float3 (0, -.5f, 0),
+                float3 (0.8f, -0.5f, 0),
+                float3 (1f, -0.2f, 0),
+                float3 (0.6f, 1, 0),
+                float3 (0, 1, 0)
             };
 
-            // Define a pixel shader that colors using a constant value
-            // render.PixelShader = p => { return float4 (p.Homogeneous.x / 1024.0f, p.Homogeneous.y / 512.0f, 1, 1); };
+            /// Creates the model using a revolution of a bezier.
+            /// Only Positions are updated.
+            var model = Manifold<PositionNormal>.Revolution (10, 10, t => EvalBezier (contourn, t), float3 (1, 1, 0)).Weld ();
+            model.ComputeNormals ();
+            return model;
+        }
 
-            #endregion
+        static void CreateMeshScene (Scene<PositionNormal> scene) {
+            var model = CreateModel ();
+            scene.Add (model.AsRaycast (), Transforms.Identity);
+        }
 
-            // Draw the mesh.
-            // render.DrawMesh (primitive);
-            // render.DrawMesh (apple);
+        static void CreateMyMeshScene (Scene<PositionNormal> scene) {
+            //(0, 1, 0)
+            scene.Add (Raycasting.PlaneXZ.AttributesMap (a => new PositionNormal { Position = a, Normal = float3 (1, 1, 1) }),
+                Transforms.Identity);
 
-            // Drawing
-            render.PixelShader = p => { return float4 (1, 0, 0, 1); };
-            for (int i = 0; i < cube0.Count; i++) {
-                render.DrawMesh (cube0[i]);
+            // /**/
+            var book1 = CreateBook (2, 1, float3 (-.3f, .05f, .2f), 17);
+            var book2 = CreateBook (2, 1, float3 (-.7f, .25f, .25f), 50);
+            var book3 = CreateBook (2, 1, float3 (0, .45f, -.2f), -30);
+            var book4 = CreateBook (2, 1, float3 (-.3f, .65f, .2f), 17);
+            var book5 = CreateBook (2, 1, float3 (0, .85f, 0), -30);
+            var book6 = CreateBook (2, 1, float3 (-.7f, 1.05f, .25f), 50);
+            var book7 = CreateBook (2, 1, float3 (-.1f, 1.25f, .2f), 17);
+
+            var magn_glass = CreateMagnifyingGlass (.5f);
+
+            foreach (var m in book1) {
+                scene.Add (m.AsRaycast (), Transforms.Identity);
             }
-
-            render.PixelShader = p => { return float4 (.131f, .4f, .3f, 1); };
-            for (int i = 0; i < cube1.Count; i++) {
-                render.DrawMesh (cube1[i]);
+            foreach (var m in book2) {
+                scene.Add (m.AsRaycast (), Transforms.Identity);
             }
-
-            render.PixelShader = p => { return float4 (0, 1, 0, 1); };
-            for (int i = 0; i < cube2.Count; i++) {
-                render.DrawMesh (cube2[i]);
+            foreach (var m in book3) {
+                scene.Add (m.AsRaycast (), Transforms.Identity);
             }
-
-            render.PixelShader = p => { return float4 (.3f, 0, 1, 1); };
-            for (int i = 0; i < cube3.Count; i++) {
-                render.DrawMesh (cube3[i]);
+            foreach (var m in book4) {
+                scene.Add (m.AsRaycast (), Transforms.Identity);
             }
-
-            render.PixelShader = p => { return float4 (.4f, .5f, 1, 1); };
-            for (int i = 0; i < cube4.Count; i++) {
-                render.DrawMesh (cube4[i]);
+            foreach (var m in book5) {
+                scene.Add (m.AsRaycast (), Transforms.Identity);
             }
-
-            render.PixelShader = p => { return float4 (1, 0, .5f, 1); };
-            for (int i = 0; i < cube5.Count; i++) {
-                render.DrawMesh (cube5[i]);
+            foreach (var m in book6) {
+                scene.Add (m.AsRaycast (), Transforms.Identity);
             }
-
-            render.PixelShader = p => { return float4 (.18f, .86f, .84f, 1); };
-            for (int i = 0; i < cube6.Count; i++) {
-                render.DrawMesh (cube6[i]);
+            foreach (var m in book7) {
+                scene.Add (m.AsRaycast (), Transforms.Identity);
             }
-
-            render.PixelShader = p => { return float4 (1, 1, 1, 1); };
-            for (int i = 0; i < magn_glass.Count; i++) {
-                render.DrawMesh (magn_glass[i]);
+            foreach (var m in magn_glass) {
+                scene.Add (m.AsRaycast (), Transforms.Identity);
             }
+        }
+
+        static void RaycastingMesh (Texture2D texture) {
+            // Scene Setup
+            float3 CameraPosition = float3 (3, 2, 6);
+            float3 LightPosition = float3 (3, 2f, 5);
+            // View and projection matrices
+            float4x4 viewMatrix = Transforms.LookAtLH (CameraPosition, float3 (0, 1, 0), float3 (0, 1, 0));
+            float4x4 projectionMatrix = Transforms.PerspectiveFovLH (pi_over_4, texture.Height / (float) texture.Width, 0.01f, 20);
+
+            Scene<PositionNormal> scene = new Scene<PositionNormal> ();
+            // CreateMeshScene (scene);
+            CreateMyMeshScene (scene);
+            // Raycaster to trace rays and check for shadow rays.
+            Raytracer<ShadowRayPayload, PositionNormal> shadower = new Raytracer<ShadowRayPayload, PositionNormal> ();
+            shadower.OnAnyHit += delegate (IRaycastContext context, PositionNormal attribute, ref ShadowRayPayload payload) {
+                // If any object is found in ray-path to the light, the ray is shadowed.
+                payload.Shadowed = true;
+                // No neccessary to continue checking other objects
+                return HitResult.Stop;
+            };
+
+            // Raycaster to trace rays and lit closest surfaces
+            Raytracer<MyRayPayload, PositionNormal> raycaster = new Raytracer<MyRayPayload, PositionNormal> ();
+            raycaster.OnClosestHit += delegate (IRaycastContext context, PositionNormal attribute, ref MyRayPayload payload) {
+                // Move geometry attribute to world space
+                attribute = attribute.Transform (context.FromGeometryToWorld);
+
+                float3 V = normalize (CameraPosition - attribute.Position);
+                float3 L = normalize (LightPosition - attribute.Position);
+                float lambertFactor = max (0, dot (attribute.Normal, L));
+
+                // Check ray to light...
+                ShadowRayPayload shadow = new ShadowRayPayload ();
+                shadower.Trace (scene,
+                    RayDescription.FromTo (attribute.Position + attribute.Normal * 0.001f, // Move an epsilon away from the surface to avoid self-shadowing 
+                        LightPosition), ref shadow);
+
+                payload.Color = shadow.Shadowed ? float3 (0, 0, 0) : float3 (1, 1, 1) * lambertFactor;
+            };
+            raycaster.OnMiss += delegate (IRaycastContext context, ref MyRayPayload payload) {
+                payload.Color = float3 (0, 0, 1); // Blue, as the sky.
+            };
+
+            /// Render all points of the screen
+            for (int px = 0; px < texture.Width; px++)
+                for (int py = 0; py < texture.Height; py++) {
+                    int progress = (px * texture.Height + py);
+                    if (progress % 100 == 0) {
+                        Console.Write ("\r" + progress * 100 / (float) (texture.Width * texture.Height) + "%   ");
+                    }
+
+                    RayDescription ray = RayDescription.FromScreen (px + 0.5f, py + 0.5f, texture.Width, texture.Height, inverse (viewMatrix), inverse (projectionMatrix), 0, 1000);
+
+                    MyRayPayload coloring = new MyRayPayload ();
+
+                    raycaster.Trace (scene, ray, ref coloring);
+
+                    texture.Write (px, py, float4 (coloring.Color, 1));
+                }
+        }
+
+        static void Main (string[] args) {
+            Stopwatch crono = new Stopwatch ();
+            crono.Start ();
+            // Texture to output the image.
+            Texture2D texture = new Texture2D (512, 512);
+
+            //SimpleRaycast(texture);
+            // LitRaycast(texture);
+            RaycastingMesh (texture);
+
+            texture.Save ("test.rbm");
+            Console.WriteLine ("Done.");
+            crono.Stop ();
+            System.Console.WriteLine ("Raycasting time was: {0} sec", crono.ElapsedMilliseconds / 1000);
         }
     }
 }

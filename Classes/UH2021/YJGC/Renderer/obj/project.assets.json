@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "F:\\Universidad\\4to Año\\4to mio\\1er Semestre\\Programacion Grafica\\teachingCG\\Classes\\UH2021\\YJGC\\Renderer\\Renderer.csproj",
+      "projectUniqueName": "F:\\Universidad\\4to Año\\4to mio\\1er Semestre\\Programacion Grafica\\yas\\teachingCG\\C#\\Renderer\\Renderer.csproj",
       "projectName": "Renderer",
-      "projectPath": "F:\\Universidad\\4to Año\\4to mio\\1er Semestre\\Programacion Grafica\\teachingCG\\Classes\\UH2021\\YJGC\\Renderer\\Renderer.csproj",
+      "projectPath": "F:\\Universidad\\4to Año\\4to mio\\1er Semestre\\Programacion Grafica\\yas\\teachingCG\\C#\\Renderer\\Renderer.csproj",
       "packagesPath": "C:\\Users\\Yasmin\\.nuget\\packages\\",
-      "outputPath": "F:\\Universidad\\4to Año\\4to mio\\1er Semestre\\Programacion Grafica\\teachingCG\\Classes\\UH2021\\YJGC\\Renderer\\obj\\",
+      "outputPath": "F:\\Universidad\\4to Año\\4to mio\\1er Semestre\\Programacion Grafica\\yas\\teachingCG\\C#\\Renderer\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
