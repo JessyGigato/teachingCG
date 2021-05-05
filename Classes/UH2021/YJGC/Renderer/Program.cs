@@ -121,23 +121,23 @@ namespace Renderer {
         static List<Mesh<MyVertex>> CreateBook (int slices, int stacks, float3 p, int deg) {
             return new List<Mesh<MyVertex>> () {
                 Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
-                        return mul (p + float3 (0, v / 5, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
-                    }).ConvertTo (Topology.Lines),
-                    Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
-                        return mul (p + float3 (1, v / 5, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
-                    }).ConvertTo (Topology.Lines),
-                    Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
-                        return mul (p + float3 (v, u / 5, 0 * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
-                    }).ConvertTo (Topology.Lines),
-                    Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
-                        return mul (p + float3 (v, u / 5, 1 * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
-                    }).ConvertTo (Topology.Lines),
-                    Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
-                        return mul (p + float3 (v, 0, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
-                    }).ConvertTo (Topology.Lines),
-                    Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
-                        return mul (p + float3 (v, .2f, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
-                    }).ConvertTo (Topology.Lines)
+                    return mul (p + float3 (0, v / 5, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
+                }).ConvertTo (Topology.Lines),
+                Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
+                    return mul (p + float3 (1, v / 5, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
+                }).ConvertTo (Topology.Lines),
+                Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
+                    return mul (p + float3 (v, u / 5, 0 * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
+                }).ConvertTo (Topology.Lines),
+                Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
+                    return mul (p + float3 (v, u / 5, 1 * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
+                }).ConvertTo (Topology.Lines),
+                Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
+                    return mul (p + float3 (v, 0, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
+                }).ConvertTo (Topology.Lines),
+                Manifold<MyVertex>.Surface (slices, stacks, (u, v) => {
+                    return mul (p + float3 (v, .2f, u * 5 / 4), transform3x3to4x4 (Transforms.RotateYGrad (deg)));
+                }).ConvertTo (Topology.Lines)
             };
         }
 
