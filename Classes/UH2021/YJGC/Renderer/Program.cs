@@ -452,7 +452,6 @@ namespace Renderer
             scene.Add (Raycasting.PlaneXZ.AttributesMap (a => new PositionNormal { Position = a, Normal = float3 (1, 1, 1) }),
                 Transforms.Identity);
 
-            
             scene.Add (Raycasting.PlaneYZ.AttributesMap (a => new PositionNormal { Position = a, Normal = float3 (1, 1, 1) }),
                 mul(Transforms.RotateYGrad(-60), Transforms.Translate(0, 0, -3)));
 
@@ -517,11 +516,11 @@ namespace Renderer
 
                 ////////////////////////////////////////////////////////////////
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
+                Mixture(LambertBRDF(float3(1, 0, 0)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f),
+                Mixture(LambertBRDF(float3(1, 0, 0)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
+                Mixture(LambertBRDF(float3(1, 0, 0)), BlinnBRDF(float3(1,1,1), 70), 0.3f),
                 Mixture(LambertBRDF(float3(1, 0, 0)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 0, 0)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 //////////////////////////////////////////////////////////////////////
@@ -529,9 +528,9 @@ namespace Renderer
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f),
+                Mixture(LambertBRDF(float3(3 * 0.255F, 3 * 0.128f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f),
+                Mixture(LambertBRDF(float3(3 * 0.255F, 3 * 0.128f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f),
                 Mixture(LambertBRDF(float3(3 * 0.255F, 3 * 0.128f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f),
                 Mixture(LambertBRDF(float3(3 * 0.255F, 3 * 0.128f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f),
                 //////////////////////////////////////////////////////////////////////
@@ -540,8 +539,8 @@ namespace Renderer
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f),
+                Mixture(LambertBRDF(float3(4 * 0.255F, 3 * 0.128f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
+                Mixture(LambertBRDF(float3(4 * 0.255F, 3 * 0.128f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(4 * 0.255F, 3 * 0.128f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(4 * 0.255F, 3 * 0.128f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 //////////////////////////////////////////////////////////////////////
@@ -549,9 +548,9 @@ namespace Renderer
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f),
+                Mixture(LambertBRDF(float3(0, .5f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
+                Mixture(LambertBRDF(float3(0, .5f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(0, .5f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(0, .5f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 //////////////////////////////////////////////////////////////////////
@@ -560,8 +559,8 @@ namespace Renderer
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f),
+                Mixture(LambertBRDF(float3(0, 0, 0.5f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
+                Mixture(LambertBRDF(float3(0, 0, 0.5f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(0, 0, 0.5f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(0, 0, 0.5f)), BlinnBRDF(float3(1,1,1), 70), 0.3f),  
                 //////////////////////////////////////////////////////////////////////
@@ -570,18 +569,18 @@ namespace Renderer
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f),
+                Mixture(LambertBRDF(float3(0, 0.5f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
+                Mixture(LambertBRDF(float3(0, 0.5f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(0, 0.5f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(0, 0.5f, 0f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 //////////////////////////////////////////////////////////////////////
                 ////////////////////////////////////////////////////////////////
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
+                Mixture(LambertBRDF(float3(0, 0, 0.5f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
-                Mixture(LambertBRDF(float3(1, 1, 1)), BlinnBRDF(float3(1,1,1), 70), 0.3f),
+                Mixture(LambertBRDF(float3(0, 0, 0.5f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
+                Mixture(LambertBRDF(float3(0, 0, 0.5f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(0, 0, 0.5f)), BlinnBRDF(float3(1,1,1), 70), 0.3f), 
                 Mixture(LambertBRDF(float3(0, 0, 0.5f)), BlinnBRDF(float3(1,1,1), 70), 0.3f),  
                 //////////////////////////////////////////////////////////////////////
