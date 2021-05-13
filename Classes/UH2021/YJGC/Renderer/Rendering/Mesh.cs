@@ -44,7 +44,6 @@ namespace Rendering
             int[] newIndices = Indices.Clone() as int[];
             return new Mesh<V>(newVertices, newIndices, this.Topology);
         }
-
     }
 
     public static class MeshTools
@@ -173,6 +172,9 @@ namespace Rendering
             return new Mesh<V>(newVertices.ToArray(), newIndices, mesh.Topology);
         }
 
+        /// <summary>
+        /// Computes the normals of the mesh vertices using the positions and the orientation of the triangles.
+        /// </summary>
         public static void ComputeNormals<V>(this Mesh<V> mesh) where V:struct, INormalVertex<V>
         {
             if (mesh.Topology != Topology.Triangles)
@@ -200,6 +202,20 @@ namespace Rendering
                 mesh.Vertices[i].Normal = normalize(normals[i]);
         }
 
+        /// <summary>
+        /// Computes the Axis-aligned boundary box of the mesh using the vertex positions.
+        /// </summary>
+        public static AABB3D ComputeAABB<V>(this Mesh<V> mesh) where V:struct, IVertex<V>
+        {
+            float3 minimum = float3(float.MaxValue, float.MaxValue, float.MaxValue);
+            float3 maximum = float3(float.MinValue, float.MinValue, float.MinValue);
+            foreach (var v in mesh.Vertices)
+            {
+                minimum = min(minimum, v.Position);
+                maximum = max(maximum, v.Position);
+            }
+            return new AABB3D { Minimum = minimum, Maximum = maximum };
+        }
     }
 
 
