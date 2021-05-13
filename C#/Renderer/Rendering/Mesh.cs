@@ -222,7 +222,7 @@ namespace Rendering
     /// <summary>
     /// Tool class to create different mesh from parametric methods.
     /// </summary>
-    public class Manifold<V> where V : struct, IVertex<V>
+    public class Manifold<V> where V : struct, ICoordinatesVertex<V>
     {
         public static Mesh<V> Surface(int slices, int stacks, Func<float, float, float3> generating)
         {
@@ -233,21 +233,32 @@ namespace Rendering
             // A manifold with x,y,z mapped from (0,0)-(1,1)
             for (int i = 0; i <= stacks; i++)
                 for (int j = 0; j <= slices; j++)
-                    vertices[i * (slices + 1) + j] = new V { Position = generating(j / (float)slices, i / (float)stacks) };
+                    vertices[i * (slices + 1) + j] = new V { Position = generating(j / (float)slices, i / (float)stacks), Coordinates = float2(j / (float)slices, i / (float)stacks) };
 
             // Filling the indices of the quad. Vertices are linked to adjacent.
             int index = 0;
             for (int i = 0; i < stacks; i++)
                 for (int j = 0; j < slices; j++)
-                {
-                    indices[index++] = i * (slices + 1) + j;
-                    indices[index++] = (i + 1) * (slices + 1) + j;
-                    indices[index++] = (i + 1) * (slices + 1) + (j + 1);
+                    if ((i + j) % 2 == 0)
+                    {
+                        indices[index++] = i * (slices + 1) + j;
+                        indices[index++] = (i + 1) * (slices + 1) + j;
+                        indices[index++] = (i + 1) * (slices + 1) + (j + 1);
 
-                    indices[index++] = i * (slices + 1) + j;
-                    indices[index++] = (i + 1) * (slices + 1) + (j + 1);
-                    indices[index++] = i * (slices + 1) + (j + 1);
-                }
+                        indices[index++] = i * (slices + 1) + j;
+                        indices[index++] = (i + 1) * (slices + 1) + (j + 1);
+                        indices[index++] = i * (slices + 1) + (j + 1);
+                    }
+                    else
+                    {
+                        indices[index++] = i * (slices + 1) + j;
+                        indices[index++] = (i + 1) * (slices + 1) + j;
+                        indices[index++] = i * (slices + 1) + (j + 1);
+
+                        indices[index++] = i * (slices + 1) + (j + 1);
+                        indices[index++] = (i + 1) * (slices + 1) + j;
+                        indices[index++] = (i + 1) * (slices + 1) + (j + 1);
+                    }
 
             return new Mesh<V>(vertices, indices);
         }

@@ -11,3 +11,9 @@ F:\Universidad\4to Año\4to mio\1er Semestre\Programacion Grafica\teachingCG\C#\
 F:\Universidad\4to Año\4to mio\1er Semestre\Programacion Grafica\teachingCG\C#\Renderer\obj\Debug\netcoreapp3.1\Renderer.dll
 F:\Universidad\4to Año\4to mio\1er Semestre\Programacion Grafica\teachingCG\C#\Renderer\obj\Debug\netcoreapp3.1\Renderer.pdb
 F:\Universidad\4to Año\4to mio\1er Semestre\Programacion Grafica\teachingCG\C#\Renderer\obj\Debug\netcoreapp3.1\Renderer.genruntimeconfig.cache
+E:\Universidad\4to Año\4to mio\1er Semestre\Programacion Grafica\teachingCG\C#\Renderer\obj\Debug\netcoreapp3.1\Renderer.csprojAssemblyReference.cache
+E:\Universidad\4to Año\4to mio\1er Semestre\Programacion Grafica\teachingCG\C#\Renderer\obj\Debug\netcoreapp3.1\Renderer.AssemblyInfoInputs.cache
+E:\Universidad\4to Año\4to mio\1er Semestre\Programacion Grafica\teachingCG\C#\Renderer\obj\Debug\netcoreapp3.1\Renderer.AssemblyInfo.cs
+E:\Universidad\4to Año\4to mio\1er Semestre\Programacion Grafica\teachingCG\C#\Renderer\obj\Debug\netcoreapp3.1\Renderer.csproj.CoreCompileInputs.cache
+E:\Universidad\4to Año\4to mio\1er Semestre\Programacion Grafica\teachingCG\C#\Renderer\obj\Debug\netcoreapp3.1\Renderer.dll
+E:\Universidad\4to Año\4to mio\1er Semestre\Programacion Grafica\teachingCG\C#\Renderer\obj\Debug\netcoreapp3.1\Renderer.pdb

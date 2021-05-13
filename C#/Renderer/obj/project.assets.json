@@ -1,41 +1,73 @@
 {
   "version": 3,
   "targets": {
-    ".NETCoreApp,Version=v3.1": {}
+    "net5.0": {
+      "SixLabors.ImageSharp/1.0.3": {
+        "type": "package",
+        "compile": {
+          "lib/netcoreapp3.1/SixLabors.ImageSharp.dll": {}
+        },
+        "runtime": {
+          "lib/netcoreapp3.1/SixLabors.ImageSharp.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "SixLabors.ImageSharp/1.0.3": {
+      "sha512": "oRmZEITad+0tL22ZfAbLps6doDV+Z0/oH0dtXLpIBwn1sgai3QxxDQPjohHiDeUp/CTzRKVrFFbc4ZITnL2UBg==",
+      "type": "package",
+      "path": "sixlabors.imagesharp/1.0.3",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net472/SixLabors.ImageSharp.dll",
+        "lib/net472/SixLabors.ImageSharp.xml",
+        "lib/netcoreapp2.1/SixLabors.ImageSharp.dll",
+        "lib/netcoreapp2.1/SixLabors.ImageSharp.xml",
+        "lib/netcoreapp3.1/SixLabors.ImageSharp.dll",
+        "lib/netcoreapp3.1/SixLabors.ImageSharp.xml",
+        "lib/netstandard1.3/SixLabors.ImageSharp.dll",
+        "lib/netstandard1.3/SixLabors.ImageSharp.xml",
+        "lib/netstandard2.0/SixLabors.ImageSharp.dll",
+        "lib/netstandard2.0/SixLabors.ImageSharp.xml",
+        "lib/netstandard2.1/SixLabors.ImageSharp.dll",
+        "lib/netstandard2.1/SixLabors.ImageSharp.xml",
+        "sixlabors.imagesharp.1.0.3.nupkg.sha512",
+        "sixlabors.imagesharp.128.png",
+        "sixlabors.imagesharp.nuspec"
+      ]
+    }
+  },
   "projectFileDependencyGroups": {
-    ".NETCoreApp,Version=v3.1": []
+    "net5.0": [
+      "SixLabors.ImageSharp >= 1.0.3"
+    ]
   },
   "packageFolders": {
-    "C:\\Users\\Yasmin\\.nuget\\packages\\": {},
-    "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder": {}
+    "C:\\Users\\Yas\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "F:\\Universidad\\4to Año\\4to mio\\1er Semestre\\Programacion Grafica\\teachingCG\\C#\\Renderer\\Renderer.csproj",
+      "projectUniqueName": "E:\\Universidad\\4to Año\\4to mio\\1er Semestre\\Programacion Grafica\\teachingCG\\C#\\Renderer\\Renderer.csproj",
       "projectName": "Renderer",
-      "projectPath": "F:\\Universidad\\4to Año\\4to mio\\1er Semestre\\Programacion Grafica\\teachingCG\\C#\\Renderer\\Renderer.csproj",
-      "packagesPath": "C:\\Users\\Yasmin\\.nuget\\packages\\",
-      "outputPath": "F:\\Universidad\\4to Año\\4to mio\\1er Semestre\\Programacion Grafica\\teachingCG\\C#\\Renderer\\obj\\",
+      "projectPath": "E:\\Universidad\\4to Año\\4to mio\\1er Semestre\\Programacion Grafica\\teachingCG\\C#\\Renderer\\Renderer.csproj",
+      "packagesPath": "C:\\Users\\Yas\\.nuget\\packages\\",
+      "outputPath": "E:\\Universidad\\4to Año\\4to mio\\1er Semestre\\Programacion Grafica\\teachingCG\\C#\\Renderer\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
-      ],
       "configFilePaths": [
-        "C:\\Users\\Yasmin\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "C:\\Users\\Yas\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
-        "netcoreapp3.1"
+        "net5.0"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
-        "netcoreapp3.1": {
+        "net5.0": {
+          "targetAlias": "net5.0",
           "projectReferences": {}
         }
       },
@@ -46,7 +78,14 @@
       }
     },
     "frameworks": {
-      "netcoreapp3.1": {
+      "net5.0": {
+        "targetAlias": "net5.0",
+        "dependencies": {
+          "SixLabors.ImageSharp": {
+            "target": "Package",
+            "version": "[1.0.3, )"
+          }
+        },
         "imports": [
           "net461",
           "net462",
@@ -62,7 +101,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.407\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.202\\RuntimeIdentifierGraph.json"
       }
     }
   }
