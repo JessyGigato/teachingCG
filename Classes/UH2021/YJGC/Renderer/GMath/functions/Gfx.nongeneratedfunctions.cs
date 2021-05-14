@@ -127,9 +127,8 @@ namespace GMath
 
         #region Inverse
 
-#pragma region inverse
-
-        public static float1x1 inverse(float1x1 m) {
+        public static float1x1 inverse(float1x1 m)
+        {
             if (m._m00 == 0.0f)
                 return 0.0f;
 
@@ -207,11 +206,11 @@ namespace GMath
                 (-Min03 / det), (+Min13 / det), (-Min23 / det), (+Min33 / det));
         }
 
-    #endregion
+        #endregion
 
-    #region Randoms
+        #region Randoms
 
-    static GRandom __random = new GRandom();
+        static GRandom __random = new GRandom();
 
         public static float random()
         {

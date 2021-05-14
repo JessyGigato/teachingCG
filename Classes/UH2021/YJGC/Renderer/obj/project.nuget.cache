@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "eV+NW9ugI/TRtnT+tAl6wnq1KiV8mnJjbj6nFUWQYkMraGNQSZ8YcSq1C9fqTzXEZ0JZ0XG/AWtxYBFwRcvGqA==",
+  "dgSpecHash": "YtHKGg9FKHiyLswxmW7np2eiJmOYfLaEq4KeA14t2JwdSaIx0F6bICAaNDYhMpZUSjk/D4p2MhAeFAY5xhqlzA==",
   "success": true,
   "projectFilePath": "E:\\Universidad\\4to Año\\4to mio\\1er Semestre\\Programacion Grafica\\teachingCG\\Classes\\UH2021\\YJGC\\Renderer\\Renderer.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\Yas\\.nuget\\packages\\sixlabors.imagesharp\\1.0.3\\sixlabors.imagesharp.1.0.3.nupkg.sha512"
+  ],
   "logs": []
 }
