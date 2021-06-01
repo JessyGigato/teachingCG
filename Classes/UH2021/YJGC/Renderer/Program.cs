@@ -149,6 +149,17 @@ namespace Renderer
             return float3x3 (f._m00, f._m01, f._m02, f._m10, f._m11, f._m12, f._m20, f._m21, f._m22);
         }
 
+        static float3 EvalBezier(float3[] control, float t)
+        {
+            // DeCasteljau
+            if (control.Length == 1)
+                return control[0]; // stop condition
+            float3[] nestedPoints = new float3[control.Length - 1];
+            for (int i = 0; i < nestedPoints.Length; i++)
+                nestedPoints[i] = lerp(control[i], control[i + 1], t);
+            return EvalBezier(nestedPoints, t);
+        }
+
         static List<Mesh<PositionNormalCoordinate>> CreateBook1 (int slices, int stacks, float3 p, int deg) {
             var model1 = Manifold<PositionNormalCoordinate>.Surface (slices, stacks, (u, v) => {
                 return mul (p + float3 (0, u / 5, v * 5 / 4), transform4x4to3x3 (Transforms.RotateYGrad (deg)));
@@ -190,12 +201,17 @@ namespace Renderer
             }).Weld ();
             model61.ComputeNormals ();
 
-            var model21 = Manifold<PositionNormalCoordinate>.Surface (slices, stacks, (u, v) => {
+
+            return new List<Mesh<PositionNormalCoordinate>> () { model1, model2, model3, model4, model5, model6, model51, model61 };
+        }
+
+        static Mesh<PositionNormalCoordinate> BookSpine(int slices, int stacks, float3 p, int deg){
+            //model21
+            var model = Manifold<PositionNormalCoordinate>.Surface (slices, stacks, (u, v) => {
                 return mul (p + float3 (1, v / 5 + .01f, u * 5 / 4), transform4x4to3x3 (Transforms.RotateYGrad (deg)));
             }).Weld ();
-            model21.ComputeNormals ();
-
-            return new List<Mesh<PositionNormalCoordinate>> () { model1, model2, model21, model3, model4, model5, model6, model51, model61 };
+            model.ComputeNormals ();
+            return model;
         }
 
         static List<Mesh<PositionNormalCoordinate>> CreateMagnifyingGlass (float y) {
@@ -220,13 +236,63 @@ namespace Renderer
             var model3 = Manifold<PositionNormalCoordinate>.Lofted (10, 1,    
                 // g function
                 u => mul (float3 (cos (2 * pi * u) / 18 + .4f, sin (2 * pi * u) / 18 - .4f + y, 1.9f), transform4x4to3x3 (Transforms.RotateYGrad (-25))),
-                u => mul (float3 (cos (2 * pi * u) / 18 + 1.4f, sin (2 * pi * u) / 18 - .25f + y, 0.98f), transform4x4to3x3 (Transforms.RotateYGrad (-45)))
+                u => mul (float3 (cos (2 * pi * u) / 18 + 1.4f, sin (2 * pi * u) / 18 - .25f + y, 1.02f), transform4x4to3x3 (Transforms.RotateYGrad (-45)))
                 // f function
             ).Weld ();
             model3.ComputeNormals ();
 
             return new List<Mesh<PositionNormalCoordinate>> () { model1, model2, model3 };
         }
+
+        static Mesh<PositionNormalCoordinate> CreateMagnifyingGlass1 (float y) {
+            //glass
+            var model1 = Manifold<PositionNormalCoordinate>.Surface (10, 10, (u, v) => {
+                float alpha = u * 2 * pi;
+                float beta = pi / 2 - v * pi;
+                return mul (float3 (sin (beta) / 10f - 0.13f,cos (alpha) * cos (beta) / 4f  - .25f + y, sin (alpha) * cos (beta) / 4 + 1.7f), transform4x4to3x3 (Transforms.RotateYGrad (282)));
+            }).Weld ();
+            model1.ComputeNormals ();  
+
+            float3[] contourn =
+            {
+                float3(0, -.5f, 0),
+                float3(0.2f, -0.5f, 0),
+                float3(.4f, -0.5f, 0),
+                float3(.6f, -0.5f, 0),
+                float3(0.8f, -0.5f, 0),
+                // float3(1f, -0.2f,0),
+                // float3(0.6f,1,0),
+                float3(.8f, -0.62f, 0),
+                float3(.6f, -0.64f, 0),
+                float3(.4f, -0.66f, 0),
+                float3(.2f, -0.68f, 0),
+                float3(0, -0.7f, 0)
+            };
+
+            // float3[] contourn =
+            // {
+            //     float3(0, -.58f, 0),
+            //     float3(0.2f, -0.56f, 0),
+            //     float3(.4f, -0.54f, 0),
+            //     float3(.6f, -0.52f, 0),
+            //     float3(0.8f, -0.5f, 0),
+            //     // float3(1f, -0.2f,0),
+            //     // float3(0.6f,1,0),
+            //     float3(.8f, -0.64f, 0),
+            //     float3(.6f, -0.64f, 0),
+            //     float3(.4f, -0.64f, 0),
+            //     float3(.2f, -0.64f, 0),
+            //     float3(0, -0.64f, 0)
+            // };
+            
+            var model2 = Manifold<PositionNormalCoordinate>.Revolution(30, 30, 
+                t => EvalBezier(contourn, t), float3(0, 1, 0)
+            ).Weld();
+            model2.ComputeNormals();
+            
+            return model2;
+        }
+
 
         static void CreateMyMeshScene (Scene<PositionNormalCoordinate, Material> scene) {
 
@@ -239,9 +305,9 @@ namespace Renderer
                 //book1 
                 float3(1, 1, 1),
                 float3(1, 0, 0),
+                float3(1, 1, 1),
+                float3(1, 1, 1),
                 float3(1, 0, 0),
-                float3(1, 1, 1),
-                float3(1, 1, 1),
                 float3(1, 0, 0),
                 float3(1, 0, 0),
                 float3(1, 0, 0),
@@ -249,7 +315,6 @@ namespace Renderer
                 //book2
                 float3(1, 1, 1),
                 float3(1, 1, 1),
-                float3(3 * 0.255F, 3 * 0.128f, 0f),
                 float3(1, 1, 1),
                 float3(1, 1, 1),
                 float3(3 * 0.255F, 3 * 0.128f, 0f),
@@ -258,8 +323,6 @@ namespace Renderer
                 float3(3 * 0.255F, 3 * 0.128f, 0f),
                 //book3
                 float3(1, 1, 1),
-                float3(1, 1, 1),
-                // float3(4 * 0.255F, 3 * 0.128f, 0f),
                 float3(1, 1, 1),
                 float3(1, 1, 1),
                 float3(1, 1, 1),
@@ -270,8 +333,6 @@ namespace Renderer
                 //book4
                 float3(1, 1, 1),
                 float3(1, 1, 1),
-                // float3(0, .5f, 0f),
-                float3(1, 1, 1),
                 float3(1, 1, 1),
                 float3(1, 1, 1),
                 float3(0, .5f, 0f),
@@ -280,8 +341,6 @@ namespace Renderer
                 float3(0, .5f, 0f),
                 //book5
                 float3(1, 1, 1),
-                float3(1, 1, 1),
-                // float3(0, 0, 0.5f),
                 float3(1, 1, 1),
                 float3(1, 1, 1),
                 float3(1, 1, 1),
@@ -292,7 +351,6 @@ namespace Renderer
                 //book6
                 float3(1, 1, 1),
                 float3(1, 1, 1),
-                float3(0, .5f, 0f),
                 float3(1, 1, 1),
                 float3(1, 1, 1),
                 float3(0, .5f, 0f),
@@ -302,9 +360,9 @@ namespace Renderer
                 //book7
                 float3(1, 1, 1),
                 float3(0, 0, 0.5f),
+                float3(1, 1, 1),
+                float3(1, 1, 1),
                 float3(0, 0, 0.5f),
-                float3(1, 1, 1),
-                float3(1, 1, 1),
                 float3(0, 0, 0.5f),
                 float3(0, 0, 0.5f),
                 float3(0, 0, 0.5f),
@@ -316,14 +374,15 @@ namespace Renderer
             };
 
             Texture2D planeTexture = Texture2D.LoadFromFile("wood.jpeg");
+            Texture2D pagesTexture = Texture2D.LoadFromFile("pages.jpg");
 
             scene.Add(Raycasting.PlaneXZ.AttributesMap(a => new PositionNormalCoordinate { Position = a, Coordinates = float2(a.x*0.1f, a.z*0.1f), Normal = float3(0, 1, 0) }),
                 new Material { DiffuseMap = planeTexture, Diffuse = float3(1, 1, 1), TextureSampler = new Sampler { Wrap = WrapMode.Repeat, MinMagFilter = Filter.Linear } },
-                Transforms.Identity);
+                Transforms.RotateYGrad(34));//Transforms.Translate(float3(0, -1, 0)));//
 
             scene.Add(Raycasting.PlaneYZ.AttributesMap(a => new PositionNormalCoordinate { Position = a, Coordinates = float2(a.y*0.1f, a.z*0.1f), Normal = float3(0, 1, 0) }),
                 new Material { DiffuseMap = planeTexture, Diffuse = float3(1, 1, 1), TextureSampler = new Sampler { Wrap = WrapMode.Repeat, MinMagFilter = Filter.Linear } },
-                Transforms.RotateYGrad(-64));
+                mul(Transforms.Translate(0, 0, -2),Transforms.RotateYGrad(-64)));
 
             // scene.Add (Raycasting.PlaneXZ.AttributesMap (a => new PositionNormalCoordinate { Position = a, Normal = float3 (1, 1, 1) }),
             //     Transforms.Identity);
@@ -331,27 +390,41 @@ namespace Renderer
             // scene.Add (Raycasting.PlaneYZ.AttributesMap (a => new PositionNormalCoordinate { Position = a, Normal = float3 (1, 1, 1) }),
             //     mul(Transforms.RotateYGrad(-60), Transforms.Translate(0, 0, -3)));
 
-            var book1 = CreateBook1 (2, 1, float3 (-.3f, .05f, .2f), 17);
-            var book2 = CreateBook1 (2, 1, float3 (-.7f, .30f, .2f), 50);
-            var book3 = CreateBook1 (2, 1, float3 (0, .55f, -.2f), -30);
-            var book4 = CreateBook1 (2, 1, float3 (-.36f, .8f, .2f), 17);
-            var book5 = CreateBook1 (2, 1, float3 (0, 1.05f, 0), -30);
-            var book6 = CreateBook1 (2, 1, float3 (-.7f, 1.3f, .25f), 50);
-            var book7 = CreateBook1 (2, 1, float3 (-.1f, 1.55f, .2f), 17);
+            var book1 = CreateBook1 (2, 1, float3 (-.3f, .02f, .2f), 17);
+            var spine1 = BookSpine(2, 1, float3 (-.3f, .02f, .2f), 17);
+            var book2 = CreateBook1 (2, 1, float3 (-.7f, .25f, .2f), 50);
+            var book3 = CreateBook1 (2, 1, float3 (0, .48f, -.2f), -30);
+            var book4 = CreateBook1 (2, 1, float3 (-.36f, .71f, .2f), 17);
+            var book5 = CreateBook1 (2, 1, float3 (0, .94f, 0), -30);
+            var book6 = CreateBook1 (2, 1, float3 (-.7f, 1.17f, .25f), 50);
+            var book7 = CreateBook1 (2, 1, float3 (-.1f, 1.40f, .2f), 17);
+            var spine2 = BookSpine(2, 1, float3 (-.1f, 1.40f, .2f), 17);
 
             var magn_glass = CreateMagnifyingGlass (.5f);
+            var magn_glass1 = CreateMagnifyingGlass1 (.5f);
+
 
             int i = 0; //to iterate over the materials
             
+
             foreach (var m in book1) {
                 scene.Add(m.AsRaycast(), new Material
                 {
-                    Specular = float3(1, 1, 1)*0.1f,
+                    Specular = float3(1, 1, 1) * 0.1f,
                     SpecularPower = 60,
                     Diffuse = materials[i++]
                 },
                 Transforms.Identity);
             }
+
+            scene.Add(spine1.AsRaycast(), new Material
+                {
+                    Specular = float3(1, 1, 1)*0.1f,
+                    SpecularPower = 60,
+                    Diffuse = materials[i++]
+                },
+                Transforms.Translate(0, -.01f, 0));
+
             foreach (var m in book2) {
                 scene.Add(m.AsRaycast(), new Material
                 {
@@ -406,20 +479,27 @@ namespace Renderer
                 },
                 Transforms.Identity);
             }
+            scene.Add(spine2.AsRaycast(), new Material
+                {
+                    Specular = float3(1, 1, 1)*0.1f,
+                    SpecularPower = 60,
+                    Diffuse = materials[i++]
+                },
+                Transforms.Identity);
             
 
-            // MagnifyingGlass
+        //     // MagnifyingGlass
 
-            scene.Add(magn_glass[0].AsRaycast(), new Material
-            {
-                Specular = float3(1, 1, 1),
-                SpecularPower = 260,
+            // scene.Add(magn_glass[0].AsRaycast(), new Material
+            // {
+            //     Specular = float3(1, 1, 1),
+            //     SpecularPower = 260,
 
-                WeightDiffuse = 0,
-                WeightFresnel = 1.0f, // Glass sphere
-                RefractionIndex = 1.6f
-            },
-                Transforms.Identity);
+            //     WeightDiffuse = 0,
+            //     WeightFresnel = 1.0f, // Glass sphere
+            //     RefractionIndex = 1.6f
+            // },
+            //     Transforms.Identity);
 
             scene.Add(magn_glass[1].AsRaycast(), new Material
                 {
@@ -436,6 +516,18 @@ namespace Renderer
                     Diffuse = materials[i++]
                 },
                 Transforms.Identity);
+            
+            scene.Add(magn_glass1.AsRaycast(), new Material
+            {
+                Specular = float3(1, 1, 1),
+                SpecularPower = 300,
+
+                WeightDiffuse = 0,
+                WeightFresnel = 1.0f, // Glass sphere
+                RefractionIndex = .8f
+            },
+               mul (Transforms.Scale(.4f, .4f, .4f), mul(Transforms.Translate(float3(.09f, -1.52f, .245f)), mul(Transforms.RotateXGrad(90), Transforms.RotateYGrad(15)))));
+            //    mul(Transforms.Translate(float3(-1, -1f, .5f)), mul(Transforms.Scale(.4f, .4f, .4f), mul(Transforms.RotateXGrad(100), Transforms.RotateYGrad(0)))));
 
         }
 
@@ -451,29 +543,29 @@ namespace Renderer
             scene.Add(sphereModel, new Material
             {
                 Specular = float3(1, 1, 1),
-                SpecularPower = 260,
+                SpecularPower = 360,
 
                 WeightDiffuse = 0,
                 WeightFresnel = 1.0f, // Glass sphere
-                RefractionIndex = 1.6f
+                RefractionIndex = 1.3f
             },
-                Transforms.Translate(0, 1, -1.5f));
+                mul(Transforms.Scale(float3(.2f, 1, 1)), Transforms.Translate(2, 1, 1f)));
 
-            scene.Add(sphereModel, new Material
-            {
-                Specular = float3(1, 1, 1),
-                SpecularPower = 260,
+            // scene.Add(sphereModel, new Material
+            // {
+            //     Specular = float3(1, 1, 1),
+            //     SpecularPower = 260,
 
-                WeightDiffuse = 0,
-                WeightMirror = 1.0f, // Mirror sphere
-            },
-                Transforms.Translate(1.5f, 1, 0));
+            //     WeightDiffuse = 0,
+            //     WeightMirror = 1.0f, // Mirror sphere
+            // },
+            //     Transforms.Translate(1.5f, 1, 0));
 
             scene.Add(sphereModel, new Material
             {
                 Specular = float3(1, 1, 1)*0.1f,
                 SpecularPower = 60,
-                Diffuse = float3(0, 0, 1)
+                Diffuse = float3(.5f, .5f, 1)
             },
                 Transforms.Translate(-1.5f, 1, 0));
 
@@ -512,8 +604,8 @@ namespace Renderer
         }
 
         // Scene Setup
-        static float3 CameraPosition = float3(3, 2, 4);
-        static float3 LightPosition = float3(5, 6, 5);
+        static float3 CameraPosition = float3(3.5f, 2f, 4f);//float3(7, 3, 2);//
+        static float3 LightPosition = float3(5, 6, 5);//float3(4, 1f, 5);//
         static float3 LightIntensity = float3(1, 1, 1) * 200;
 
         static void Raytracing (Texture2D texture)
